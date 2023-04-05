@@ -1,0 +1,77 @@
+env:
+  GF_AUTH_DISABLE_LOGIN_FORM: true
+  GF_AUTH_ANONYMOUS_ENABLED: true
+  GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+
+dashboardProviders:
+  dashboardproviders.yaml:
+    apiVersion: 1
+    providers:
+    - name: 'default'
+      orgId: 1
+      folder: ''
+      type: file
+      disableDeletion: true
+      editable: false
+      options:
+        path: /var/lib/grafana/dashboards/default
+
+dashboards:
+  default:
+    tns-demo:
+      gnetId: '16491'
+      datasource: 'prometheus'
+
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+    - name: prometheus
+      id: prometheus
+      type: prometheus
+      url: http://mimir-distributed-nginx.mimir/prometheus
+      access: proxy
+      isDefault: true
+      jsonData:
+        exemplarTraceIdDestinations:
+          - name: traceID
+            datasourceUid: 'tempo'
+    - name: loki
+      id: loki
+      type: loki
+      access: proxy
+      url: http://loki-loki-distributed-query-frontend-headless.loki:3100
+      jsonData:
+        maxLines: 1000
+        derivedFields:
+          - datasourceUid: 'tempo'
+            matcherRegex: "traceID=(\\w+)"
+            name: TraceID
+            url: '$${__value.raw}'
+    - name: tempo
+      id: tempo
+      type: tempo
+      access: proxy
+      url: http://tempo-distributed-query-frontend.tempo:3100
+      jsonData:
+        httpMethod: GET
+        tracesToLogs:
+          datasourceUid: 'loki'
+          tags: ['job', 'instance', 'pod', 'namespace']
+          mappedTags: [{ key: 'service.name', value: 'service' }]
+          mapTagNamesEnabled: false
+          spanStartTimeShift: '-5m'
+          spanEndTimeShift: '5m'
+          filterByTraceID: false
+          filterBySpanID: false
+        tracesToMetrics:
+          datasourceUid: 'prometheus'
+          tags: [{ key: 'service.name', value: 'service' }, { key: 'job' }]
+        serviceMap:
+          datasourceUid: 'prometheus'
+        search:
+          hide: false
+        nodeGraph:
+          enabled: true
+        lokiSearch:
+          datasourceUid: 'loki'

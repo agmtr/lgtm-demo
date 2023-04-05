@@ -1,0 +1,51 @@
+repositories:
+  - name: prometheus-community
+    url: https://prometheus-community.github.io/helm-charts
+
+  - name: grafana
+    url: https://grafana.github.io/helm-charts
+
+releases:
+  - name: kube-state-metrics
+    namespace: kube-system
+    chart: prometheus-community/kube-state-metrics
+
+  - name: mimir-distributed
+    namespace: mimir
+    chart: grafana/mimir-distributed
+    values:
+      - values/mimir.yaml
+
+  - name: loki
+    namespace: loki
+    chart: grafana/loki-distributed
+
+  - name: tempo-distributed
+    namespace: tempo
+    chart: grafana/tempo-distributed
+    values:
+      - values/tempo.yaml
+
+  - name: grafana
+    namespace: grafana
+    chart: grafana/grafana
+    values:
+      - values/grafana.yaml
+
+  - name: grafana-agent-metrics
+    namespace: grafana
+    chart: grafana/grafana-agent
+    values:
+      - values/grafana-agent-metrics.yaml
+
+  - name: grafana-agent-logs
+    namespace: grafana
+    chart: grafana/grafana-agent
+    values:
+      - values/grafana-agent-logs.yaml
+
+  - name: grafana-agent-traces
+    namespace: grafana
+    chart: grafana/grafana-agent
+    values:
+      - values/grafana-agent-traces.yaml
